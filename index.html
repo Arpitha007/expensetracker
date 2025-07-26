@@ -49,6 +49,14 @@
         .app-loaded .loading-screen {
             display: none;
         }
+
+        .month-tab {
+            transition: all 0.3s ease;
+        }
+
+        .month-tab:hover {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -75,33 +83,60 @@
                 'vanshika': { password: 'vanshika123', name: 'Vanshika Battu' }
             },
             
-            // Save user data to cloud
-            saveUserData: function(username, transactions) {
-                this.data[username] = transactions;
+            // Save user data to cloud (organized by year and month)
+            saveUserData: function(username, year, month, transactions) {
+                if (!this.data[username]) this.data[username] = {};
+                if (!this.data[username][year]) this.data[username][year] = {};
+                this.data[username][year][month] = transactions;
+                
                 // Also save to localStorage as backup
-                localStorage.setItem(`monthlyTracker_${username}`, JSON.stringify(transactions));
+                localStorage.setItem(`monthlyTracker_${username}_${year}_${month}`, JSON.stringify(transactions));
             },
             
-            // Get user data from cloud
-            getUserData: function(username) {
-                // Try cloud first, then localStorage as fallback
-                if (this.data[username]) {
-                    return this.data[username];
+            // Get user data from cloud (for specific year and month)
+            getUserData: function(username, year, month) {
+                // Try cloud first
+                if (this.data[username] && this.data[username][year] && this.data[username][year][month]) {
+                    return this.data[username][year][month];
                 }
+                
+                // Then localStorage as fallback
                 try {
-                    const saved = localStorage.getItem(`monthlyTracker_${username}`);
+                    const saved = localStorage.getItem(`monthlyTracker_${username}_${year}_${month}`);
                     const data = saved ? JSON.parse(saved) : [];
-                    this.data[username] = data; // Sync to cloud
+                    
+                    // Sync to cloud
+                    if (!this.data[username]) this.data[username] = {};
+                    if (!this.data[username][year]) this.data[username][year] = {};
+                    this.data[username][year][month] = data;
+                    
                     return data;
                 } catch (error) {
                     return [];
                 }
             },
+
+            // Get all data for a user (all years and months)
+            getAllUserData: function(username) {
+                const allData = {};
+                const currentYear = new Date().getFullYear();
+                
+                // Load from cloud and localStorage
+                for (let year = currentYear - 2; year <= currentYear + 1; year++) {
+                    allData[year] = {};
+                    for (let month = 0; month < 12; month++) {
+                        const monthName = ['January', 'February', 'March', 'April', 'May', 'June',
+                                         'July', 'August', 'September', 'October', 'November', 'December'][month];
+                        allData[year][monthName] = this.getUserData(username, year, monthName);
+                    }
+                }
+                
+                return allData;
+            },
             
             // Add new user
             addUser: function(username, password, name, isAdmin = false) {
                 this.users[username] = { password, name, isAdmin };
-                // Also save users to localStorage
                 localStorage.setItem('userDatabase', JSON.stringify(this.users));
                 return true;
             },
@@ -153,7 +188,7 @@
 
         const Eye = () => (
             <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M1 12s4 - 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         );
@@ -195,6 +230,27 @@
                 <circle cx="8.5" cy="7" r="4"></circle>
                 <line x1="20" y1="8" x2="20" y2="14"></line>
                 <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+        );
+
+        const Calendar = () => (
+            <svg className="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const ChevronLeft = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="15,18 9,12 15,6"></polyline>
+            </svg>
+        );
+
+        const ChevronRight = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="9,18 15,12 9,6"></polyline>
             </svg>
         );
 
@@ -396,7 +452,17 @@
 
         // Main Tracker Component
         const MonthlyTracker = ({ currentUser, userName, isAdmin, onLogout }) => {
-            const [transactions, setTransactions] = useState(() => window.CloudSync.getUserData(currentUser));
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonthIndex = currentDate.getMonth();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const [selectedYear, setSelectedYear] = useState(currentYear);
+            const [selectedMonth, setSelectedMonth] = useState(monthNames[currentMonthIndex]);
+            const [transactions, setTransactions] = useState(() => 
+                window.CloudSync.getUserData(currentUser, selectedYear, selectedMonth)
+            );
             const [showForm, setShowForm] = useState(false);
             const [formData, setFormData] = useState({
                 type: 'expense',
@@ -410,10 +476,16 @@
             const [showAddUser, setShowAddUser] = useState(false);
             const [userRefresh, setUserRefresh] = useState(0);
 
+            // Load transactions when month/year changes
+            useEffect(() => {
+                const monthTransactions = window.CloudSync.getUserData(currentUser, selectedYear, selectedMonth);
+                setTransactions(monthTransactions);
+            }, [currentUser, selectedYear, selectedMonth]);
+
             // Save data whenever transactions change
             useEffect(() => {
-                window.CloudSync.saveUserData(currentUser, transactions);
-            }, [transactions, currentUser]);
+                window.CloudSync.saveUserData(currentUser, selectedYear, selectedMonth, transactions);
+            }, [transactions, currentUser, selectedYear, selectedMonth]);
 
             const incomeCategories = [
                 'Salary/Wages', 'Freelance', 'Business Income', 'Investment Returns', 
@@ -433,6 +505,12 @@
                 'Healthcare': '🏥', 'Insurance': '🛡️', 'Shopping': '🛍️', 'Entertainment': '🎬',
                 'Education': '📚', 'Personal Care': '💅', 'Travel': '✈️', 'Subscriptions': '📱',
                 'Debt Payments': '💳', 'Savings': '🐷', 'Taxes': '📋', 'Other Expenses': '📦'
+            };
+
+            const monthEmojis = {
+                'January': '❄️', 'February': '💝', 'March': '🌸', 'April': '🌱',
+                'May': '🌷', 'June': '☀️', 'July': '🏖️', 'August': '🌻',
+                'September': '🍂', 'October': '🎃', 'November': '🦃', 'December': '🎄'
             };
 
             const handleSubmit = () => {
@@ -490,9 +568,38 @@
                 setUserRefresh(prev => prev + 1);
             };
 
+            const changeMonth = (direction) => {
+                const currentIndex = monthNames.indexOf(selectedMonth);
+                let newIndex, newYear = selectedYear;
+                
+                if (direction === 'prev') {
+                    newIndex = currentIndex - 1;
+                    if (newIndex < 0) {
+                        newIndex = 11;
+                        newYear = selectedYear - 1;
+                    }
+                } else {
+                    newIndex = currentIndex + 1;
+                    if (newIndex > 11) {
+                        newIndex = 0;
+                        newYear = selectedYear + 1;
+                    }
+                }
+                
+                setSelectedMonth(monthNames[newIndex]);
+                setSelectedYear(newYear);
+            };
+
+            const getMonthSummary = (monthName) => {
+                const monthData = window.CloudSync.getUserData(currentUser, selectedYear, monthName);
+                const income = monthData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                const expenses = monthData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+                return { income, expenses, balance: income - expenses, transactions: monthData.length };
+            };
+
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-7xl mx-auto">
                         {/* Header with User Info */}
                         <div className="text-center mb-8">
                             <div className="flex justify-between items-center mb-4">
@@ -547,7 +654,7 @@
                             )}
                             
                             <h1 className="text-4xl font-bold text-gray-800 mb-2">Monthly Tracker</h1>
-                            <p className="text-gray-600">Track your income and expenses effortlessly</p>
+                            <p className="text-gray-600">Track your income and expenses month by month</p>
                         </div>
 
                         {/* Add User Modal */}
@@ -558,12 +665,75 @@
                             />
                         )}
 
-                        {/* Summary Cards */}
+                        {/* Year and Month Selector */}
+                        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <button
+                                    onClick={() => changeMonth('prev')}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    <ChevronLeft />
+                                    <span>Previous</span>
+                                </button>
+                                
+                                <div className="text-center">
+                                    <div className="text-3xl font-bold text-gray-800 flex items-center gap-2 justify-center">
+                                        <span>{monthEmojis[selectedMonth]}</span>
+                                        <span>{selectedMonth} {selectedYear}</span>
+                                        <Calendar />
+                                    </div>
+                                </div>
+                                
+                                <button
+                                    onClick={() => changeMonth('next')}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight />
+                                </button>
+                            </div>
+
+                            {/* Month Overview Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                {monthNames.map((month) => {
+                                    const summary = getMonthSummary(month);
+                                    const isSelected = month === selectedMonth;
+                                    const hasData = summary.transactions > 0;
+                                    
+                                    return (
+                                        <button
+                                            key={month}
+                                            onClick={() => setSelectedMonth(month)}
+                                            className={`month-tab p-3 rounded-lg text-center transition-all ${
+                                                isSelected 
+                                                    ? 'bg-blue-500 text-white shadow-lg' 
+                                                    : hasData 
+                                                        ? 'bg-green-100 hover:bg-green-200 text-green-800'
+                                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                            }`}
+                                        >
+                                            <div className="text-lg mb-1">{monthEmojis[month]}</div>
+                                            <div className="text-xs font-medium">{month.slice(0, 3)}</div>
+                                            {hasData && (
+                                                <div className="text-xs mt-1">
+                                                    <div>{summary.transactions} txns</div>
+                                                    <div className={summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                        {isSelected ? (summary.balance >= 0 ? '+' : '') + formatCurrency(summary.balance).slice(1) : '●'}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Summary Cards for Selected Month */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Total Income</p>
+                                        <p className="text-sm text-gray-600 mb-1">Income ({selectedMonth})</p>
                                         <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
                                     </div>
                                     <TrendingUp />
@@ -573,7 +743,7 @@
                             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Total Expenses</p>
+                                        <p className="text-sm text-gray-600 mb-1">Expenses ({selectedMonth})</p>
                                         <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
                                     </div>
                                     <TrendingDown />
@@ -583,7 +753,7 @@
                             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Net Balance</p>
+                                        <p className="text-sm text-gray-600 mb-1">Net Balance ({selectedMonth})</p>
                                         <div className="flex items-center gap-2">
                                             <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                                                 {showBalance ? formatCurrency(balance) : '****'}
@@ -603,7 +773,7 @@
                             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Transactions</p>
+                                        <p className="text-sm text-gray-600 mb-1">Transactions ({selectedMonth})</p>
                                         <p className="text-2xl font-bold text-purple-600">{transactions.length}</p>
                                     </div>
                                     <div className="text-purple-500 text-4xl">📊</div>
@@ -620,7 +790,7 @@
                                         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold"
                                     >
                                         <PlusCircle />
-                                        Add Transaction
+                                        Add Transaction to {selectedMonth}
                                     </button>
 
                                     {showForm && (
@@ -702,15 +872,17 @@
                                                 onClick={handleSubmit}
                                                 className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold"
                                             >
-                                                Add Transaction
+                                                Add to {selectedMonth} {selectedYear}
                                             </button>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Category Summaries */}
+                                {/* Category Summaries for Selected Month */}
                                 <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Category Breakdown</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        {selectedMonth} Category Breakdown
+                                    </h3>
                                     
                                     <div className="space-y-4">
                                         <div>
@@ -740,15 +912,18 @@
                                 </div>
                             </div>
 
-                            {/* Transaction History */}
+                            {/* Transaction History for Selected Month */}
                             <div className="lg:col-span-2">
                                 <div className="bg-white rounded-xl shadow-lg p-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                        {selectedMonth} {selectedYear} Transactions
+                                    </h3>
                                     
                                     {transactions.length === 0 ? (
                                         <div className="text-center py-12 text-gray-500">
-                                            <div className="text-4xl mb-2">📝</div>
-                                            <p>No transactions yet. Add your first transaction to get started!</p>
+                                            <div className="text-4xl mb-2">{monthEmojis[selectedMonth]}</div>
+                                            <p>No transactions for {selectedMonth} yet.</p>
+                                            <p className="text-sm mt-2">Add your first transaction to get started!</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -858,7 +1033,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'monthly-tracker-v3';
+                    const CACHE_NAME = 'monthly-tracker-v4';
                     const urlsToCache = ['/'];
                     
                     self.addEventListener('install', event => {
