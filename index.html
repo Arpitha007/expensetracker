@@ -67,7 +67,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
         
         // Icon components as inline SVG
         const PlusCircle = () => (
@@ -123,7 +123,17 @@
         );
 
         const MonthlyTracker = () => {
-            const [transactions, setTransactions] = useState([]);
+            // Load saved data from localStorage on component mount
+            const [transactions, setTransactions] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('monthlyTracker_transactions');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (error) {
+                    console.error('Error loading saved data:', error);
+                    return [];
+                }
+            });
+            
             const [showForm, setShowForm] = useState(false);
             const [formData, setFormData] = useState({
                 type: 'expense',
@@ -132,7 +142,33 @@
                 description: '',
                 date: new Date().toISOString().split('T')[0]
             });
-            const [showBalance, setShowBalance] = useState(true);
+            
+            const [showBalance, setShowBalance] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('monthlyTracker_showBalance');
+                    return saved ? JSON.parse(saved) : true;
+                } catch (error) {
+                    return true;
+                }
+            });
+
+            // Save data to localStorage whenever transactions change
+            React.useEffect(() => {
+                try {
+                    localStorage.setItem('monthlyTracker_transactions', JSON.stringify(transactions));
+                } catch (error) {
+                    console.error('Error saving transactions:', error);
+                }
+            }, [transactions]);
+
+            // Save balance visibility preference
+            React.useEffect(() => {
+                try {
+                    localStorage.setItem('monthlyTracker_showBalance', JSON.stringify(showBalance));
+                } catch (error) {
+                    console.error('Error saving balance preference:', error);
+                }
+            }, [showBalance]);
 
             const incomeCategories = [
                 'Salary/Wages', 'Freelance', 'Business Income', 'Investment Returns', 
@@ -176,7 +212,51 @@
             };
 
             const deleteTransaction = (id) => {
-                setTransactions(transactions.filter(t => t.id !== id));
+                const updatedTransactions = transactions.filter(t => t.id !== id);
+                setTransactions(updatedTransactions);
+            };
+
+            // Clear all data function
+            const clearAllData = () => {
+                if (window.confirm('Are you sure you want to delete all transactions? This cannot be undone.')) {
+                    setTransactions([]);
+                    localStorage.removeItem('monthlyTracker_transactions');
+                }
+            };
+
+            // Export data function
+            const exportData = () => {
+                const dataStr = JSON.stringify(transactions, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `monthly-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            };
+
+            // Import data function
+            const importData = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            if (Array.isArray(importedData)) {
+                                setTransactions(importedData);
+                                alert('Data imported successfully!');
+                            } else {
+                                alert('Invalid file format');
+                            }
+                        } catch (error) {
+                            alert('Error importing data: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+                // Reset the input
+                event.target.value = '';
             };
 
             const totalIncome = transactions
@@ -362,6 +442,41 @@
                                             </button>
                                         </div>
                                     )}
+                                </div>
+
+                                {/* Data Management Section */}
+                                <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h3>
+                                    
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={exportData}
+                                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                                        >
+                                            📥 Export Data
+                                        </button>
+                                        
+                                        <label className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium cursor-pointer block text-center">
+                                            📤 Import Data
+                                            <input
+                                                type="file"
+                                                accept=".json"
+                                                onChange={importData}
+                                                className="hidden"
+                                            />
+                                        </label>
+                                        
+                                        <button
+                                            onClick={clearAllData}
+                                            className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                                        >
+                                            🗑️ Clear All Data
+                                        </button>
+                                        
+                                        <div className="text-xs text-gray-500 text-center pt-2">
+                                            💾 Data automatically saved locally
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Category Summaries */}
