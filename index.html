@@ -18,6 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.5/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <style>
         .icon { width: 20px; height: 20px; display: inline-block; }
@@ -57,6 +58,12 @@
         .month-tab:hover {
             transform: translateY(-2px);
         }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -71,7 +78,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
         
         // Simple cloud sync simulation using a global object
         window.CloudSync = window.CloudSync || {
@@ -253,6 +260,89 @@
                 <polyline points="9,18 15,12 9,6"></polyline>
             </svg>
         );
+
+        // Pie Chart Component
+        const PieChart = ({ data, title, type }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
+                if (data.length === 0) return;
+
+                const ctx = chartRef.current.getContext('2d');
+                
+                const colors = type === 'income' ? [
+                    '#10B981', '#059669', '#047857', '#065F46', '#064E3B', '#16A34A', '#15803D', '#166534'
+                ] : [
+                    '#EF4444', '#DC2626', '#B91C1C', '#991B1B', '#7F1D1D', '#F97316', '#EA580C', '#C2410C'
+                ];
+
+                chartInstance.current = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.map(item => item.category),
+                        datasets: [{
+                            data: data.map(item => item.total),
+                            backgroundColor: colors.slice(0, data.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return `${context.label}: ₹${context.parsed.toLocaleString('en-IN')} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [data, type]);
+
+            if (data.length === 0) {
+                return (
+                    <div className="chart-container flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                            <div className="text-4xl mb-2">📊</div>
+                            <p>No {type} data for this month</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="chart-container">
+                    <canvas ref={chartRef}></canvas>
+                </div>
+            );
+        };
 
         // Login Component
         const LoginForm = ({ onLogin }) => {
@@ -476,10 +566,23 @@
             const [showAddUser, setShowAddUser] = useState(false);
             const [userRefresh, setUserRefresh] = useState(0);
 
+            // Helper function to get the default date for selected month/year
+            const getDefaultDateForMonth = (year, month) => {
+                const monthIndex = monthNames.indexOf(month);
+                const date = new Date(year, monthIndex, 1);
+                return date.toISOString().split('T')[0];
+            };
+
             // Load transactions when month/year changes
             useEffect(() => {
                 const monthTransactions = window.CloudSync.getUserData(currentUser, selectedYear, selectedMonth);
                 setTransactions(monthTransactions);
+                
+                // Update the form date to match the selected month/year
+                setFormData(prev => ({
+                    ...prev,
+                    date: getDefaultDateForMonth(selectedYear, selectedMonth)
+                }));
             }, [currentUser, selectedYear, selectedMonth]);
 
             // Save data whenever transactions change
@@ -529,7 +632,7 @@
                     category: '',
                     amount: '',
                     description: '',
-                    date: new Date().toISOString().split('T')[0]
+                    date: getDefaultDateForMonth(selectedYear, selectedMonth)
                 });
                 setShowForm(false);
             };
@@ -778,6 +881,31 @@
                                     </div>
                                     <div className="text-purple-500 text-4xl">📊</div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Pie Charts Section */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                    Income Distribution - {selectedMonth} {selectedYear}
+                                </h3>
+                                <PieChart 
+                                    data={getCategoryTotals('income')} 
+                                    title="Income Distribution"
+                                    type="income"
+                                />
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                    Expense Distribution - {selectedMonth} {selectedYear}
+                                </h3>
+                                <PieChart 
+                                    data={getCategoryTotals('expense')} 
+                                    title="Expense Distribution"
+                                    type="expense"
+                                />
                             </div>
                         </div>
 
