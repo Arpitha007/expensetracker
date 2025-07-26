@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Monthly Tracker</title>
     
     <!-- PWA Meta Tags -->
@@ -23,6 +23,7 @@
     <style>
         .icon { width: 20px; height: 20px; display: inline-block; }
         .icon-lg { width: 32px; height: 32px; }
+        .icon-sm { width: 16px; height: 16px; }
         
         .loading-screen {
             position: fixed;
@@ -53,6 +54,7 @@
 
         .month-tab {
             transition: all 0.3s ease;
+            min-height: 80px;
         }
 
         .month-tab:hover {
@@ -61,8 +63,138 @@
 
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 250px;
             width: 100%;
+        }
+
+        /* Mobile-specific enhancements */
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 200px;
+            }
+            
+            .mobile-sticky-header {
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                z-index: 40;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .mobile-scroll {
+                max-height: 60vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .mobile-fab {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 50;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+            
+            .mobile-sheet {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-radius: 20px 20px 0 0;
+                z-index: 60;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+            
+            .mobile-sheet.open {
+                transform: translateY(0);
+            }
+            
+            .mobile-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 55;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+            }
+            
+            .mobile-backdrop.open {
+                opacity: 1;
+                pointer-events: all;
+            }
+            
+            .touch-target {
+                min-height: 44px;
+                min-width: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .month-tab {
+                min-height: 70px;
+            }
+        }
+
+        /* Custom scrollbar for mobile */
+        .mobile-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .mobile-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        
+        .mobile-scroll::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        .mobile-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Swipe indicator */
+        .swipe-indicator {
+            width: 40px;
+            height: 4px;
+            background: #ccc;
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+
+        /* Better touch feedback */
+        .touch-feedback:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+        }
+
+        /* Improved input focus for mobile */
+        input:focus, select:focus, textarea:focus {
+            transform: none !important;
+            zoom: 1;
+        }
+
+        /* Prevent zoom on input focus on iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            select, textarea, input[type="text"], input[type="password"], 
+            input[type="datetime"], input[type="datetime-local"], 
+            input[type="date"], input[type="month"], input[type="time"], 
+            input[type="week"], input[type="number"], input[type="email"], 
+            input[type="url"] {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -191,6 +323,13 @@
             </svg>
         );
 
+        const Plus = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
         const TrendingUp = () => (
             <svg className="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -287,6 +426,30 @@
             </svg>
         );
 
+        const X = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const Menu = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        );
+
+        const BarChart3 = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3v18h18"></path>
+                <path d="M18 17V9"></path>
+                <path d="M13 17V5"></path>
+                <path d="M8 17v-3"></path>
+            </svg>
+        );
+
         // Pie Chart Component
         const PieChart = ({ data, title, type }) => {
             const chartRef = useRef(null);
@@ -325,10 +488,10 @@
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    padding: 20,
+                                    padding: 15,
                                     usePointStyle: true,
                                     font: {
-                                        size: 12
+                                        size: window.innerWidth < 768 ? 10 : 12
                                     }
                                 }
                             },
@@ -357,7 +520,7 @@
                     <div className="chart-container flex items-center justify-center">
                         <div className="text-center text-gray-500">
                             <div className="text-4xl mb-2">📊</div>
-                            <p>No {type} data for this month</p>
+                            <p className="text-sm">No {type} data for this month</p>
                         </div>
                     </div>
                 );
@@ -370,7 +533,7 @@
             );
         };
 
-        // Login Component
+        // Mobile-Optimized Login Component
         const LoginForm = ({ onLogin }) => {
             const [loginData, setLoginData] = useState({ username: '', password: '' });
             const [error, setError] = useState('');
@@ -399,11 +562,11 @@
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md">
                         <div className="text-center mb-8">
                             <div className="text-6xl mb-4">💰</div>
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Monthly Tracker</h1>
-                            <p className="text-gray-600">Sign in to access your financial data</p>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Monthly Tracker</h1>
+                            <p className="text-gray-600 text-sm sm:text-base">Sign in to access your financial data</p>
                         </div>
 
                         <div className="space-y-4">
@@ -414,7 +577,7 @@
                                     value={loginData.username}
                                     onChange={(e) => setLoginData({...loginData, username: e.target.value})}
                                     onKeyPress={handleKeyPress}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter username"
                                 />
                             </div>
@@ -426,20 +589,20 @@
                                     value={loginData.password}
                                     onChange={(e) => setLoginData({...loginData, password: e.target.value})}
                                     onKeyPress={handleKeyPress}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter password"
                                 />
                             </div>
 
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                                     {error}
                                 </div>
                             )}
 
                             <button
                                 onClick={handleLogin}
-                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold"
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold text-base touch-feedback"
                             >
                                 Sign In
                             </button>
@@ -449,7 +612,7 @@
             );
         };
 
-        // Add User Form Component (Admin Only)
+        // Mobile-Optimized Add User Form Component
         const AddUserForm = ({ onAddUser, onClose }) => {
             const [userData, setUserData] = useState({
                 username: '',
@@ -490,8 +653,13 @@
 
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Add New User</h3>
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-gray-800">Add New User</h3>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg touch-target">
+                                <X />
+                            </button>
+                        </div>
                         
                         <div className="space-y-4">
                             <div>
@@ -500,7 +668,7 @@
                                     type="text"
                                     value={userData.name}
                                     onChange={(e) => setUserData({...userData, name: e.target.value})}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter full name"
                                 />
                             </div>
@@ -511,7 +679,7 @@
                                     type="text"
                                     value={userData.username}
                                     onChange={(e) => setUserData({...userData, username: e.target.value.toLowerCase()})}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter username (min 3 chars)"
                                 />
                             </div>
@@ -522,20 +690,20 @@
                                     type="password"
                                     value={userData.password}
                                     onChange={(e) => setUserData({...userData, password: e.target.value})}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter password (min 6 chars)"
                                 />
                             </div>
 
-                            <div className="flex items-center">
+                            <div className="flex items-center touch-target">
                                 <input
                                     type="checkbox"
                                     id="isAdmin"
                                     checked={userData.isAdmin}
                                     onChange={(e) => setUserData({...userData, isAdmin: e.target.checked})}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
-                                <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700">
+                                <label htmlFor="isAdmin" className="ml-3 block text-sm text-gray-700">
                                     Make this user an admin
                                 </label>
                             </div>
@@ -549,13 +717,13 @@
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleSubmit}
-                                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold"
+                                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 text-white py-4 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold touch-feedback"
                                 >
                                     Add User
                                 </button>
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                    className="flex-1 bg-gray-500 text-white py-4 px-4 rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold touch-feedback"
                                 >
                                     Cancel
                                 </button>
@@ -566,7 +734,7 @@
             );
         };
 
-        // Change Password Form Component
+        // Mobile-Optimized Change Password Form Component
         const ChangePasswordForm = ({ currentUser, onClose, onPasswordChanged }) => {
             const [passwordData, setPasswordData] = useState({
                 currentPassword: '',
@@ -621,10 +789,15 @@
 
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Lock />
-                            <h3 className="text-xl font-bold text-gray-800">Change Password</h3>
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <Lock />
+                                <h3 className="text-xl font-bold text-gray-800">Change Password</h3>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg touch-target">
+                                <X />
+                            </button>
                         </div>
                         
                         {success ? (
@@ -642,7 +815,7 @@
                                         value={passwordData.currentPassword}
                                         onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
                                         onKeyPress={handleKeyPress}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter current password"
                                     />
                                 </div>
@@ -654,7 +827,7 @@
                                         value={passwordData.newPassword}
                                         onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                                         onKeyPress={handleKeyPress}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Enter new password (min 6 chars)"
                                     />
                                 </div>
@@ -666,7 +839,7 @@
                                         value={passwordData.confirmPassword}
                                         onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
                                         onKeyPress={handleKeyPress}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         placeholder="Confirm new password"
                                     />
                                 </div>
@@ -680,13 +853,13 @@
                                 <div className="flex gap-3">
                                     <button
                                         onClick={handleSubmit}
-                                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold"
+                                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold touch-feedback"
                                     >
                                         Change Password
                                     </button>
                                     <button
                                         onClick={onClose}
-                                        className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                        className="flex-1 bg-gray-500 text-white py-4 px-4 rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold touch-feedback"
                                     >
                                         Cancel
                                     </button>
@@ -698,10 +871,30 @@
             );
         };
 
-        // Main Tracker Component
+        // Mobile Bottom Sheet Component
+        const MobileBottomSheet = ({ isOpen, onClose, children, title }) => {
+            return (
+                <>
+                    <div className={`mobile-backdrop ${isOpen ? 'open' : ''}`} onClick={onClose}></div>
+                    <div className={`mobile-sheet ${isOpen ? 'open' : ''}`}>
+                        <div className="p-4">
+                            <div className="swipe-indicator mb-4"></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+                                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg touch-target">
+                                    <X />
+                                </button>
+                            </div>
+                            {children}
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        // Main Mobile-Enhanced Tracker Component
         const MonthlyTracker = ({ currentUser, userName, isAdmin, onLogout }) => {
             const currentDate = new Date();
-            // Default to 2025 if current year is before 2025, otherwise use current year but cap at 2030
             const defaultYear = Math.max(2025, Math.min(currentDate.getFullYear(), 2030));
             const currentMonthIndex = currentDate.getMonth();
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -712,7 +905,8 @@
             const [transactions, setTransactions] = useState(() => 
                 window.CloudSync.getUserData(currentUser, defaultYear, monthNames[currentMonthIndex])
             );
-            const [showForm, setShowForm] = useState(false);
+            const [showMobileForm, setShowMobileForm] = useState(false);
+            const [showMobileMenu, setShowMobileMenu] = useState(false);
             const [formData, setFormData] = useState({
                 type: 'expense',
                 category: '',
@@ -794,7 +988,7 @@
                     description: '',
                     date: getDefaultDateForMonth(selectedYear, selectedMonth)
                 });
-                setShowForm(false);
+                setShowMobileForm(false);
             };
 
             const deleteTransaction = (id) => {
@@ -832,7 +1026,6 @@
             };
 
             const handlePasswordChanged = () => {
-                // Could show a success message or refresh user data if needed
                 console.log('Password changed successfully');
             };
 
@@ -845,7 +1038,6 @@
                     if (newIndex < 0) {
                         newIndex = 11;
                         newYear = selectedYear - 1;
-                        // Limit to minimum year 2025
                         if (newYear < 2025) {
                             newYear = 2025;
                             newIndex = 0;
@@ -856,7 +1048,6 @@
                     if (newIndex > 11) {
                         newIndex = 0;
                         newYear = selectedYear + 1;
-                        // Limit to maximum year 2030
                         if (newYear > 2030) {
                             newYear = 2030;
                             newIndex = 11;
@@ -893,72 +1084,27 @@
             };
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-                    <div className="max-w-7xl mx-auto">
-                        {/* Header with User Info */}
-                        <div className="text-center mb-8">
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <User />
-                                    <span>Welcome, {userName} {isAdmin && '(Admin)'}</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setShowChangePassword(true)}
-                                        className="flex items-center gap-2 text-purple-600 hover:text-purple-800 transition-colors text-sm"
-                                    >
-                                        <Lock />
-                                        <span>Change Password</span>
-                                    </button>
-                                    {isAdmin && (
-                                        <>
-                                            <button
-                                                onClick={() => setShowAddUser(true)}
-                                                className="flex items-center gap-2 text-green-600 hover:text-green-800 transition-colors text-sm"
-                                            >
-                                                <UserPlus />
-                                                <span>Add User</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setShowCredentials(!showCredentials)}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm"
-                                            >
-                                                <Eye />
-                                                <span>{showCredentials ? 'Hide' : 'Show'} Users</span>
-                                            </button>
-                                        </>
-                                    )}
-                                    <button
-                                        onClick={onLogout}
-                                        className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors"
-                                    >
-                                        <LogOut />
-                                        <span>Logout</span>
-                                    </button>
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+                    {/* Mobile Header */}
+                    <div className="mobile-sticky-header bg-white px-4 py-3 sm:px-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="text-2xl">💰</div>
+                                <div>
+                                    <h1 className="text-lg font-bold text-gray-800">Monthly Tracker</h1>
+                                    <p className="text-xs text-gray-600">Welcome, {userName}</p>
                                 </div>
                             </div>
-                            
-                            {/* Admin Credentials Panel */}
-                            {isAdmin && showCredentials && (
-                                <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">User Management (Admin View)</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        {Object.entries(window.CloudSync.users).map(([username, user]) => (
-                                            <div key={username} className="bg-gray-50 p-3 rounded-lg">
-                                                <p className="font-medium text-gray-800">{user.name}</p>
-                                                <p className="text-sm text-gray-600">Username: <span className="font-mono">{username}</span></p>
-                                                <p className="text-sm text-gray-600">Password: <span className="font-mono">{user.password}</span></p>
-                                                {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Admin</span>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            
-                            <h1 className="text-4xl font-bold text-gray-800 mb-2">Monthly Tracker</h1>
-                            <p className="text-gray-600">Track your income and expenses month by month</p>
+                            <button
+                                onClick={() => setShowMobileMenu(true)}
+                                className="p-2 hover:bg-gray-100 rounded-lg touch-target"
+                            >
+                                <Menu />
+                            </button>
                         </div>
+                    </div>
 
+                    <div className="p-4 pb-24">
                         {/* Add User Modal */}
                         {showAddUser && (
                             <AddUserForm 
@@ -976,31 +1122,46 @@
                             />
                         )}
 
-                        {/* Year and Month Selector */}
-                        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-                            <div className="flex items-center justify-between mb-6">
+                        {/* Admin Credentials Panel */}
+                        {isAdmin && showCredentials && (
+                            <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border-l-4 border-blue-500">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">User Management (Admin View)</h3>
+                                <div className="space-y-3">
+                                    {Object.entries(window.CloudSync.users).map(([username, user]) => (
+                                        <div key={username} className="bg-gray-50 p-3 rounded-lg">
+                                            <p className="font-medium text-gray-800">{user.name}</p>
+                                            <p className="text-sm text-gray-600">Username: <span className="font-mono">{username}</span></p>
+                                            <p className="text-sm text-gray-600">Password: <span className="font-mono">{user.password}</span></p>
+                                            {user.isAdmin && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Admin</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Month Navigation */}
+                        <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
+                            <div className="flex items-center justify-between mb-4">
                                 <button
                                     onClick={() => changeMonth('prev')}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors touch-target"
                                 >
                                     <ChevronLeft />
-                                    <span>Previous</span>
+                                    <span className="text-sm">Prev</span>
                                 </button>
                                 
                                 <div className="text-center">
-                                    <div className="text-3xl font-bold text-gray-800 flex items-center gap-2 justify-center mb-3">
+                                    <div className="text-xl font-bold text-gray-800 flex items-center gap-2 justify-center mb-2">
                                         <span>{monthEmojis[selectedMonth]}</span>
                                         <span>{selectedMonth} {selectedYear}</span>
-                                        <Calendar />
                                     </div>
                                     
-                                    {/* Year Selector */}
                                     <div className="flex items-center justify-center gap-2">
-                                        <label className="text-sm font-medium text-gray-600">Year:</label>
+                                        <label className="text-xs font-medium text-gray-600">Year:</label>
                                         <select
                                             value={selectedYear}
                                             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                                         >
                                             {[2025, 2026, 2027, 2028, 2029, 2030].map(year => (
                                                 <option key={year} value={year}>{year}</option>
@@ -1011,21 +1172,21 @@
                                 
                                 <button
                                     onClick={() => changeMonth('next')}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors touch-target"
                                 >
-                                    <span>Next</span>
+                                    <span className="text-sm">Next</span>
                                     <ChevronRight />
                                 </button>
                             </div>
 
-                            {/* Month Overview Grid with Year Context */}
+                            {/* Scrollable Month Grid */}
                             <div className="mb-4">
-                                <div className="text-center text-sm text-gray-600 mb-3">
-                                    <span className="bg-gray-100 px-3 py-1 rounded-full">
-                                        📅 Viewing {selectedYear} - Click any month to switch
+                                <div className="text-center text-xs text-gray-600 mb-3">
+                                    <span className="bg-gray-100 px-2 py-1 rounded-full">
+                                        📅 {selectedYear} - Tap any month to switch
                                     </span>
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                     {monthNames.map((month) => {
                                         const summary = getMonthSummary(month);
                                         const isSelected = month === selectedMonth;
@@ -1035,7 +1196,7 @@
                                             <button
                                                 key={month}
                                                 onClick={() => setSelectedMonth(month)}
-                                                className={`month-tab p-3 rounded-lg text-center transition-all ${
+                                                className={`month-tab p-3 rounded-lg text-center transition-all touch-feedback ${
                                                     isSelected 
                                                         ? 'bg-blue-500 text-white shadow-lg' 
                                                         : hasData 
@@ -1047,9 +1208,9 @@
                                                 <div className="text-xs font-medium">{month.slice(0, 3)}</div>
                                                 {hasData && (
                                                     <div className="text-xs mt-1">
-                                                        <div>{summary.transactions} txns</div>
+                                                        <div>{summary.transactions}</div>
                                                         <div className={summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                            {isSelected ? (summary.balance >= 0 ? '+' : '') + formatCurrency(summary.balance).slice(1) : '●'}
+                                                            {isSelected ? (summary.balance >= 0 ? '+' : '') + formatCurrency(summary.balance).slice(1, 6) + '...' : '●'}
                                                         </div>
                                                     </div>
                                                 )}
@@ -1059,90 +1220,103 @@
                                 </div>
                             </div>
 
-                            {/* Year Overview Summary */}
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+                            {/* Year Summary */}
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3">
                                 <h4 className="text-sm font-semibold text-gray-700 mb-2">📊 {selectedYear} Year Summary</h4>
-                                <div className="grid grid-cols-3 gap-4 text-center">
+                                <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                     <div>
-                                        <div className="text-lg font-bold text-green-600">
-                                            {formatCurrency(getYearSummary().totalIncome)}
+                                        <div className="font-bold text-green-600">
+                                            ₹{(getYearSummary().totalIncome / 1000).toFixed(0)}K
                                         </div>
-                                        <div className="text-xs text-gray-600">Total Income</div>
+                                        <div className="text-gray-600">Income</div>
                                     </div>
                                     <div>
-                                        <div className="text-lg font-bold text-red-600">
-                                            {formatCurrency(getYearSummary().totalExpenses)}
+                                        <div className="font-bold text-red-600">
+                                            ₹{(getYearSummary().totalExpenses / 1000).toFixed(0)}K
                                         </div>
-                                        <div className="text-xs text-gray-600">Total Expenses</div>
+                                        <div className="text-gray-600">Expenses</div>
                                     </div>
                                     <div>
-                                        <div className={`text-lg font-bold ${getYearSummary().yearBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                            {formatCurrency(getYearSummary().yearBalance)}
+                                        <div className={`font-bold ${getYearSummary().yearBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                            ₹{(getYearSummary().yearBalance / 1000).toFixed(0)}K
                                         </div>
-                                        <div className="text-xs text-gray-600">Net Balance</div>
+                                        <div className="text-gray-600">Balance</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Summary Cards for Selected Month */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Income ({selectedMonth})</p>
-                                        <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                                        <p className="text-xs text-gray-600 mb-1">Income</p>
+                                        <p className="text-lg font-bold text-green-600">
+                                            {totalIncome > 99999 ? `₹${(totalIncome/1000).toFixed(0)}K` : formatCurrency(totalIncome)}
+                                        </p>
                                     </div>
-                                    <TrendingUp />
+                                    <div className="text-green-500">
+                                        <TrendingUp />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                            <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Expenses ({selectedMonth})</p>
-                                        <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+                                        <p className="text-xs text-gray-600 mb-1">Expenses</p>
+                                        <p className="text-lg font-bold text-red-600">
+                                            {totalExpenses > 99999 ? `₹${(totalExpenses/1000).toFixed(0)}K` : formatCurrency(totalExpenses)}
+                                        </p>
                                     </div>
-                                    <TrendingDown />
+                                    <div className="text-red-500">
+                                        <TrendingDown />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                            <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Net Balance ({selectedMonth})</p>
+                                        <p className="text-xs text-gray-600 mb-1">Balance</p>
                                         <div className="flex items-center gap-2">
-                                            <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                                {showBalance ? formatCurrency(balance) : '****'}
+                                            <p className={`text-lg font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                                {showBalance ? 
+                                                    (Math.abs(balance) > 99999 ? `₹${(balance/1000).toFixed(0)}K` : formatCurrency(balance))
+                                                    : '****'
+                                                }
                                             </p>
                                             <button
                                                 onClick={() => setShowBalance(!showBalance)}
-                                                className="text-gray-400 hover:text-gray-600"
+                                                className="text-gray-400 hover:text-gray-600 touch-target"
                                             >
                                                 {showBalance ? <EyeOff /> : <Eye />}
                                             </button>
                                         </div>
                                     </div>
-                                    <RupeeSign />
+                                    <div className="text-blue-500">
+                                        <RupeeSign />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                            <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-600 mb-1">Transactions ({selectedMonth})</p>
-                                        <p className="text-2xl font-bold text-purple-600">{transactions.length}</p>
+                                        <p className="text-xs text-gray-600 mb-1">Transactions</p>
+                                        <p className="text-lg font-bold text-purple-600">{transactions.length}</p>
                                     </div>
-                                    <div className="text-purple-500 text-4xl">📊</div>
+                                    <div className="text-purple-500 text-2xl">📊</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Pie Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-white rounded-xl shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                                    Income Distribution - {selectedMonth} {selectedYear}
+                        {/* Charts Section - Mobile Optimized */}
+                        <div className="space-y-6 mb-6">
+                            <div className="bg-white rounded-xl shadow-lg p-4">
+                                <h3 className="text-base font-semibold text-gray-800 mb-4 text-center">
+                                    Income Distribution - {selectedMonth}
                                 </h3>
                                 <PieChart 
                                     data={getCategoryTotals('income')} 
@@ -1151,9 +1325,9 @@
                                 />
                             </div>
 
-                            <div className="bg-white rounded-xl shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                                    Expense Distribution - {selectedMonth} {selectedYear}
+                            <div className="bg-white rounded-xl shadow-lg p-4">
+                                <h3 className="text-base font-semibold text-gray-800 mb-4 text-center">
+                                    Expense Distribution - {selectedMonth}
                                 </h3>
                                 <PieChart 
                                     data={getCategoryTotals('expense')} 
@@ -1163,194 +1337,215 @@
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Add Transaction Form */}
-                            <div className="lg:col-span-1">
-                                <div className="bg-white rounded-xl shadow-lg p-6">
-                                    <button
-                                        onClick={() => setShowForm(!showForm)}
-                                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold"
-                                    >
-                                        <PlusCircle />
-                                        Add Transaction to {selectedMonth}
-                                    </button>
-
-                                    {showForm && (
-                                        <div className="mt-6 space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => setFormData({...formData, type: 'income', category: ''})}
-                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                                                            formData.type === 'income'
-                                                                ? 'bg-green-500 text-white'
-                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        }`}
-                                                    >
-                                                        Income
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setFormData({...formData, type: 'expense', category: ''})}
-                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                                                            formData.type === 'expense'
-                                                                ? 'bg-red-500 text-white'
-                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        }`}
-                                                    >
-                                                        Expense
-                                                    </button>
+                        {/* Transaction History */}
+                        <div className="bg-white rounded-xl shadow-lg p-4">
+                            <h3 className="text-base font-semibold text-gray-800 mb-4">
+                                {selectedMonth} {selectedYear} Transactions
+                            </h3>
+                            
+                            {transactions.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    <div className="text-4xl mb-2">{monthEmojis[selectedMonth]}</div>
+                                    <p className="text-sm">No transactions for {selectedMonth} yet.</p>
+                                    <p className="text-xs mt-2">Tap the + button to add your first transaction!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 mobile-scroll">
+                                    {transactions.map(transaction => (
+                                        <div
+                                            key={transaction.id}
+                                            className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${
+                                                transaction.type === 'income' 
+                                                    ? 'bg-green-50 border-green-500' 
+                                                    : 'bg-red-50 border-red-500'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="text-xl">
+                                                    {categoryIcons[transaction.category]}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-gray-800 text-sm truncate">{transaction.category}</p>
+                                                    {transaction.description && (
+                                                        <p className="text-xs text-gray-600 truncate">{transaction.description}</p>
+                                                    )}
+                                                    <p className="text-xs text-gray-500">{transaction.date}</p>
                                                 </div>
                                             </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                                <select
-                                                    value={formData.category}
-                                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            <div className="flex items-center gap-2 ml-2">
+                                                <span className={`font-bold text-sm ${
+                                                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                                                }`}>
+                                                    {transaction.type === 'income' ? '+' : '-'}
+                                                    {transaction.amount > 99999 ? `₹${(transaction.amount/1000).toFixed(0)}K` : `₹${transaction.amount.toLocaleString('en-IN')}`}
+                                                </span>
+                                                <button
+                                                    onClick={() => deleteTransaction(transaction.id)}
+                                                    className="text-red-400 hover:text-red-600 p-1 touch-target"
                                                 >
-                                                    <option value="">Select category</option>
-                                                    {(formData.type === 'income' ? incomeCategories : expenseCategories).map(cat => (
-                                                        <option key={cat} value={cat}>{categoryIcons[cat]} {cat}</option>
-                                                    ))}
-                                                </select>
+                                                    <Trash2 />
+                                                </button>
                                             </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={formData.amount}
-                                                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                    placeholder="0.00"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.description}
-                                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                    placeholder="Optional description"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                                                <input
-                                                    type="date"
-                                                    value={formData.date}
-                                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <button
-                                                onClick={handleSubmit}
-                                                className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold"
-                                            >
-                                                Add to {selectedMonth} {selectedYear}
-                                            </button>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
-
-                                {/* Category Summaries for Selected Month */}
-                                <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                        {selectedMonth} Category Breakdown
-                                    </h3>
-                                    
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="font-medium text-green-600 mb-2">Income Categories</h4>
-                                            <div className="space-y-2">
-                                                {getCategoryTotals('income').map(({category, total}) => (
-                                                    <div key={category} className="flex justify-between items-center">
-                                                        <span className="text-sm text-gray-600">{categoryIcons[category]} {category}</span>
-                                                        <span className="font-medium text-green-600">{formatCurrency(total)}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h4 className="font-medium text-red-600 mb-2">Expense Categories</h4>
-                                            <div className="space-y-2">
-                                                {getCategoryTotals('expense').map(({category, total}) => (
-                                                    <div key={category} className="flex justify-between items-center">
-                                                        <span className="text-sm text-gray-600">{categoryIcons[category]} {category}</span>
-                                                        <span className="font-medium text-red-600">{formatCurrency(total)}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Transaction History for Selected Month */}
-                            <div className="lg:col-span-2">
-                                <div className="bg-white rounded-xl shadow-lg p-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                        {selectedMonth} {selectedYear} Transactions
-                                    </h3>
-                                    
-                                    {transactions.length === 0 ? (
-                                        <div className="text-center py-12 text-gray-500">
-                                            <div className="text-4xl mb-2">{monthEmojis[selectedMonth]}</div>
-                                            <p>No transactions for {selectedMonth} yet.</p>
-                                            <p className="text-sm mt-2">Add your first transaction to get started!</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                                            {transactions.map(transaction => (
-                                                <div
-                                                    key={transaction.id}
-                                                    className={`flex items-center justify-between p-4 rounded-lg border-l-4 ${
-                                                        transaction.type === 'income' 
-                                                            ? 'bg-green-50 border-green-500' 
-                                                            : 'bg-red-50 border-red-500'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="text-2xl">
-                                                            {categoryIcons[transaction.category]}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-medium text-gray-800">{transaction.category}</p>
-                                                            {transaction.description && (
-                                                                <p className="text-sm text-gray-600">{transaction.description}</p>
-                                                            )}
-                                                            <p className="text-xs text-gray-500">{transaction.date}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`font-bold ${
-                                                            transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                                                        }`}>
-                                                            {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => deleteTransaction(transaction.id)}
-                                                            className="text-red-400 hover:text-red-600 p-1"
-                                                        >
-                                                            <Trash2 />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* Mobile FAB */}
+                    <button
+                        onClick={() => setShowMobileForm(true)}
+                        className="mobile-fab w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-200 touch-feedback"
+                    >
+                        <Plus />
+                    </button>
+
+                    {/* Mobile Menu Sheet */}
+                    <MobileBottomSheet
+                        isOpen={showMobileMenu}
+                        onClose={() => setShowMobileMenu(false)}
+                        title="Menu"
+                    >
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => {
+                                    setShowMobileMenu(false);
+                                    setShowChangePassword(true);
+                                }}
+                                className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg touch-target"
+                            >
+                                <Lock />
+                                <span>Change Password</span>
+                            </button>
+                            
+                            {isAdmin && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setShowMobileMenu(false);
+                                            setShowAddUser(true);
+                                        }}
+                                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg touch-target"
+                                    >
+                                        <UserPlus />
+                                        <span>Add User</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowCredentials(!showCredentials);
+                                            setShowMobileMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg touch-target"
+                                    >
+                                        <Eye />
+                                        <span>{showCredentials ? 'Hide' : 'Show'} Users</span>
+                                    </button>
+                                </>
+                            )}
+                            
+                            <button
+                                onClick={() => {
+                                    setShowMobileMenu(false);
+                                    onLogout();
+                                }}
+                                className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg text-red-600 touch-target"
+                            >
+                                <LogOut />
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    </MobileBottomSheet>
+
+                    {/* Mobile Form Sheet */}
+                    <MobileBottomSheet
+                        isOpen={showMobileForm}
+                        onClose={() => setShowMobileForm(false)}
+                        title={`Add Transaction to ${selectedMonth}`}
+                    >
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setFormData({...formData, type: 'income', category: ''})}
+                                        className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all touch-feedback ${
+                                            formData.type === 'income'
+                                                ? 'bg-green-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        Income
+                                    </button>
+                                    <button
+                                        onClick={() => setFormData({...formData, type: 'expense', category: ''})}
+                                        className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all touch-feedback ${
+                                            formData.type === 'expense'
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        Expense
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="">Select category</option>
+                                    {(formData.type === 'income' ? incomeCategories : expenseCategories).map(cat => (
+                                        <option key={cat} value={cat}>{categoryIcons[cat]} {cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.amount}
+                                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="0.00"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <input
+                                    type="text"
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                    className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!formData.category || !formData.amount}
+                                className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-4 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold touch-feedback disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Add to {selectedMonth} {selectedYear}
+                            </button>
+                        </div>
+                    </MobileBottomSheet>
                 </div>
             );
         };
@@ -1415,7 +1610,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'monthly-tracker-v4';
+                    const CACHE_NAME = 'monthly-tracker-v5';
                     const urlsToCache = ['/'];
                     
                     self.addEventListener('install', event => {
@@ -1441,6 +1636,19 @@
                     .catch(error => console.log('SW registration failed'));
             });
         }
+
+        // Add touch event handling for better mobile experience
+        document.addEventListener('touchstart', function(){}, {passive: true});
+        
+        // Prevent double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            var now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 </html>
