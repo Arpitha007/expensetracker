@@ -123,13 +123,13 @@
                 }
             },
 
-            // Get all data for a user (all years and months)
+            // Get all data for a user (all years and months) - Dynamic year range
             getAllUserData: function(username) {
                 const allData = {};
                 const currentYear = new Date().getFullYear();
                 
-                // Load from cloud and localStorage
-                for (let year = currentYear - 2; year <= currentYear + 1; year++) {
+                // Load from cloud and localStorage - Extended range for past and future years
+                for (let year = currentYear - 5; year <= currentYear + 5; year++) {
                     allData[year] = {};
                     for (let month = 0; month < 12; month++) {
                         const monthName = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -275,11 +275,19 @@
 
                 const ctx = chartRef.current.getContext('2d');
                 
-                const colors = type === 'income' ? [
-                    '#10B981', '#059669', '#047857', '#065F46', '#064E3B', '#16A34A', '#15803D', '#166534'
-                ] : [
-                    '#EF4444', '#DC2626', '#B91C1C', '#991B1B', '#7F1D1D', '#F97316', '#EA580C', '#C2410C'
+                const incomeColors = [
+                    '#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4', 
+                    '#84CC16', '#F97316', '#EC4899', '#6366F1', '#14B8A6', '#A855F7',
+                    '#22C55E', '#3B82F6', '#F59E0B', '#EF4444'
                 ];
+                
+                const expenseColors = [
+                    '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E', '#10B981',
+                    '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#EC4899',
+                    '#F43F5E', '#E11D48', '#BE185D', '#A21CAF'
+                ];
+                
+                const colors = type === 'income' ? incomeColors : expenseColors;
 
                 chartInstance.current = new Chart(ctx, {
                     type: 'pie',
@@ -573,6 +581,18 @@
                 return date.toISOString().split('T')[0];
             };
 
+            // Helper function to validate and sync date with selected month/year
+            const syncDateWithMonth = (inputDate, targetYear, targetMonth) => {
+                const inputDateObj = new Date(inputDate);
+                const targetMonthIndex = monthNames.indexOf(targetMonth);
+                
+                // If the input date's month/year doesn't match the selected month/year, sync it
+                if (inputDateObj.getFullYear() !== targetYear || inputDateObj.getMonth() !== targetMonthIndex) {
+                    return getDefaultDateForMonth(targetYear, targetMonth);
+                }
+                return inputDate;
+            };
+
             // Load transactions when month/year changes
             useEffect(() => {
                 const monthTransactions = window.CloudSync.getUserData(currentUser, selectedYear, selectedMonth);
@@ -619,11 +639,14 @@
             const handleSubmit = () => {
                 if (!formData.category || !formData.amount) return;
 
+                // Ensure the transaction date is synced with the selected month/year
+                const syncedDate = syncDateWithMonth(formData.date, selectedYear, selectedMonth);
+
                 const newTransaction = {
                     id: Date.now(),
                     ...formData,
                     amount: parseFloat(formData.amount),
-                    date: formData.date
+                    date: syncedDate
                 };
 
                 setTransactions([newTransaction, ...transactions]);
@@ -784,6 +807,20 @@
                                         <span>{monthEmojis[selectedMonth]}</span>
                                         <span>{selectedMonth} {selectedYear}</span>
                                         <Calendar />
+                                    </div>
+                                    <div className="mt-2">
+                                        <select
+                                            value={selectedYear}
+                                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                            className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                        >
+                                            {Array.from({length: 11}, (_, i) => {
+                                                const year = currentYear - 5 + i;
+                                                return (
+                                                    <option key={year} value={year}>{year}</option>
+                                                );
+                                            })}
+                                        </select>
                                     </div>
                                 </div>
                                 
@@ -991,9 +1028,17 @@
                                                 <input
                                                     type="date"
                                                     value={formData.date}
-                                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                                    onChange={(e) => {
+                                                        const syncedDate = syncDateWithMonth(e.target.value, selectedYear, selectedMonth);
+                                                        setFormData({...formData, date: syncedDate});
+                                                    }}
+                                                    min={`${selectedYear}-${String(monthNames.indexOf(selectedMonth) + 1).padStart(2, '0')}-01`}
+                                                    max={`${selectedYear}-${String(monthNames.indexOf(selectedMonth) + 1).padStart(2, '0')}-${new Date(selectedYear, monthNames.indexOf(selectedMonth) + 1, 0).getDate()}`}
                                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Date will be automatically set to {selectedMonth} {selectedYear}
+                                                </p>
                                             </div>
 
                                             <button
