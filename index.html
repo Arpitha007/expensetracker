@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Monthly Tracker">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMzQjgyRjYiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjZmZmZmZmIj4KICA8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz4KPC9zdmc+Cg==">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1vbnRobHkgVHJhY2tlciIsCiAgInNob3J0X25hbWUiOiAiVHJhY2tlciIsCiAgImRlc2NyaXB0aW9uIjogIlRyYWNrIHlvdXIgaW5jb21lIGFuZCBleHBlbnNlcyBlZmZvcnRsZXNzbHkiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMzQjgyRjYiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0YVdSMGFEMGlNVGt5SWlCb1pXbG5hSFE5SWpFNU1pSWdkbWxsZDBKdmVEMGlNQ0F3SURFNU1pQXhPVElpSUdacGJHdzlJbTV2Ym1VaUlIaHRiRzV6UFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eU1EQXdMM04yWnlJK0NqeHlaV04wSUhkcFpIUm9QU0l4T1RJaUlHaGxhV2RvZEQwaU1Ua3lJaUJ5ZUQwaU1qUWlJR1pwYkd3OUlpTXpRamczUmpZaUx6NEtQSE4yWnlCNFBTSTBPQ0lnZVQwaU5EZ2lJSGRwWkhSb1BTSTVOaUlnYUdWcFoyaDBQU0k1TmlJZ2RtbGxkMEp2ZUQwaU1DQXdJREkwSURJMElpQm1hV3hzUFNJalpsbVptWm1abUlqNEtJQ0E4Y0dGMGFDQmtQU0pOTVRJZ01rTTJMalE0SURJZ01pQTJMalE0SURJZ01USWdNeUE0TGpRNElERXdJREV3SURRdU5EZ2dNVEFnTVRBZ01UQmtMamc0SURFd0lERXdMVFF1TkRnZ01UQXRNVEJUTVRjdU5USWdNaUF4TWlBeWVtMHRNaUF4TldrdE5TMDFJREV1TkRFdE1TNDBNVXd4TUNBeE5DNHhObmczTGpVNUxUY3VOVTU4TVRrZ09HeHRPU0E5ZWlJdlBnbzhMM04yWno0SyI9IiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -193,24 +195,6 @@
             input[type="url"] {
                 font-size: 16px;
             }
-        }
-
-        .year-summary-expanded {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
     </style>
 </head>
@@ -439,18 +423,6 @@
         const ChevronRight = () => (
             <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <polyline points="9,18 15,12 9,6"></polyline>
-            </svg>
-        );
-
-        const ChevronDown = () => (
-            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <polyline points="6,9 12,15 18,9"></polyline>
-            </svg>
-        );
-
-        const ChevronUp = () => (
-            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <polyline points="18,15 12,9 6,15"></polyline>
             </svg>
         );
 
@@ -947,7 +919,6 @@
             const [showAddUser, setShowAddUser] = useState(false);
             const [showChangePassword, setShowChangePassword] = useState(false);
             const [userRefresh, setUserRefresh] = useState(0);
-            const [showYearSummaryExpanded, setShowYearSummaryExpanded] = useState(false);
 
             // Helper function to get the default date for selected month/year
             const getDefaultDateForMonth = (year, month) => {
@@ -1095,50 +1066,6 @@
                 return { income, expenses, balance: income - expenses, transactions: monthData.length };
             };
 
-            // FIXED: Improved year summary calculation
-            const getYearSummary = () => {
-                let totalIncome = 0;
-                let totalExpenses = 0;
-                let totalTransactions = 0;
-                let monthsWithData = 0;
-                const monthlyBreakdown = [];
-                
-                monthNames.forEach(month => {
-                    const monthData = window.CloudSync.getUserData(currentUser, selectedYear, month);
-                    const monthIncome = monthData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-                    const monthExpenses = monthData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-                    
-                    totalIncome += monthIncome;
-                    totalExpenses += monthExpenses;
-                    totalTransactions += monthData.length;
-                    
-                    if (monthData.length > 0) {
-                        monthsWithData++;
-                    }
-                    
-                    monthlyBreakdown.push({
-                        month,
-                        income: monthIncome,
-                        expenses: monthExpenses,
-                        balance: monthIncome - monthExpenses,
-                        transactions: monthData.length
-                    });
-                });
-                
-                return {
-                    totalIncome,
-                    totalExpenses,
-                    yearBalance: totalIncome - totalExpenses,
-                    totalTransactions,
-                    monthsWithData,
-                    monthlyBreakdown,
-                    averageMonthlyIncome: monthsWithData > 0 ? totalIncome / monthsWithData : 0,
-                    averageMonthlyExpenses: monthsWithData > 0 ? totalExpenses / monthsWithData : 0
-                };
-            };
-
-            const yearSummary = getYearSummary();
-
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
                     {/* Mobile Header */}
@@ -1236,7 +1163,7 @@
                             </div>
 
                             {/* Scrollable Month Grid */}
-                            <div className="mb-4">
+                            <div>
                                 <div className="text-center text-xs text-gray-600 mb-3">
                                     <span className="bg-gray-100 px-2 py-1 rounded-full">
                                         📅 {selectedYear} - Tap any month to switch
@@ -1274,105 +1201,6 @@
                                         );
                                     })}
                                 </div>
-                            </div>
-
-                            {/* FIXED: Enhanced Year Summary */}
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-sm font-semibold text-gray-700">📊 {selectedYear} Year Summary</h4>
-                                    <button
-                                        onClick={() => setShowYearSummaryExpanded(!showYearSummaryExpanded)}
-                                        className="p-1 hover:bg-white/50 rounded transition-colors touch-target"
-                                    >
-                                        {showYearSummaryExpanded ? <ChevronUp /> : <ChevronDown />}
-                                    </button>
-                                </div>
-                                
-                                <div className="grid grid-cols-3 gap-2 text-center text-xs mb-2">
-                                    <div>
-                                        <div className="font-bold text-green-600">
-                                            ₹{yearSummary.totalIncome > 99999 
-                                                ? (yearSummary.totalIncome / 100000).toFixed(1) + 'L'
-                                                : (yearSummary.totalIncome / 1000).toFixed(0) + 'K'
-                                            }
-                                        </div>
-                                        <div className="text-gray-600">Income</div>
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-red-600">
-                                            ₹{yearSummary.totalExpenses > 99999 
-                                                ? (yearSummary.totalExpenses / 100000).toFixed(1) + 'L'
-                                                : (yearSummary.totalExpenses / 1000).toFixed(0) + 'K'
-                                            }
-                                        </div>
-                                        <div className="text-gray-600">Expenses</div>
-                                    </div>
-                                    <div>
-                                        <div className={`font-bold ${yearSummary.yearBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                            ₹{Math.abs(yearSummary.yearBalance) > 99999 
-                                                ? (yearSummary.yearBalance / 100000).toFixed(1) + 'L'
-                                                : (yearSummary.yearBalance / 1000).toFixed(0) + 'K'
-                                            }
-                                        </div>
-                                        <div className="text-gray-600">Balance</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-between text-xs text-gray-600">
-                                    <span>{yearSummary.totalTransactions} transactions</span>
-                                    <span>{yearSummary.monthsWithData}/12 months active</span>
-                                </div>
-
-                                {/* Expanded Year Summary */}
-                                {showYearSummaryExpanded && (
-                                    <div className="year-summary-expanded mt-4 pt-4 border-t border-gray-200">
-                                        <div className="grid grid-cols-2 gap-4 text-xs mb-4">
-                                            <div className="bg-white/70 p-2 rounded">
-                                                <div className="font-semibold text-gray-700">Monthly Averages</div>
-                                                <div className="text-green-600">Income: ₹{(yearSummary.averageMonthlyIncome / 1000).toFixed(0)}K</div>
-                                                <div className="text-red-600">Expenses: ₹{(yearSummary.averageMonthlyExpenses / 1000).toFixed(0)}K</div>
-                                            </div>
-                                            <div className="bg-white/70 p-2 rounded">
-                                                <div className="font-semibold text-gray-700">Savings Rate</div>
-                                                <div className={`font-bold ${yearSummary.yearBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {yearSummary.totalIncome > 0 
-                                                        ? ((yearSummary.yearBalance / yearSummary.totalIncome) * 100).toFixed(1) + '%'
-                                                        : '0%'
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="space-y-1">
-                                            {yearSummary.monthlyBreakdown.map((monthData, index) => {
-                                                if (monthData.transactions === 0) return null;
-                                                
-                                                return (
-                                                    <div key={monthData.month} className="flex items-center justify-between bg-white/50 p-2 rounded text-xs">
-                                                        <div className="flex items-center gap-2">
-                                                            <span>{monthEmojis[monthData.month]}</span>
-                                                            <span className="font-medium">{monthData.month.slice(0, 3)}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-green-600">+₹{(monthData.income / 1000).toFixed(0)}K</span>
-                                                            <span className="text-red-600">-₹{(monthData.expenses / 1000).toFixed(0)}K</span>
-                                                            <span className={`font-bold ${monthData.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                                                {monthData.balance >= 0 ? '+' : ''}₹{(monthData.balance / 1000).toFixed(0)}K
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        
-                                        {yearSummary.monthsWithData === 0 && (
-                                            <div className="text-center py-4 text-gray-500">
-                                                <div className="text-2xl mb-2">📊</div>
-                                                <p className="text-xs">No data for {selectedYear} yet</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         </div>
 
@@ -1740,7 +1568,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'monthly-tracker-v6';
+                    const CACHE_NAME = 'monthly-tracker-v5';
                     const urlsToCache = ['/'];
                     
                     self.addEventListener('install', event => {
