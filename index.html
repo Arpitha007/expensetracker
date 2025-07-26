@@ -291,7 +291,10 @@
             };
 
             const handleSubmit = () => {
-                if (!formData.category || !formData.amount) return;
+                if (!formData.category || !formData.amount) {
+                    alert('Please select a category and enter an amount');
+                    return;
+                }
 
                 const newTransaction = {
                     id: Date.now(),
@@ -300,7 +303,8 @@
                     date: formData.date
                 };
 
-                setTransactions([newTransaction, ...transactions]);
+                const updatedTransactions = [newTransaction, ...transactions];
+                setTransactions(updatedTransactions);
                 setFormData({
                     type: 'expense',
                     category: '',
@@ -312,7 +316,8 @@
             };
 
             const deleteTransaction = (id) => {
-                setTransactions(transactions.filter(t => t.id !== id));
+                const updatedTransactions = transactions.filter(t => t.id !== id);
+                setTransactions(updatedTransactions);
             };
 
             const totalIncome = transactions
@@ -504,7 +509,10 @@
                                             </div>
 
                                             <button
-                                                onClick={handleSubmit}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleSubmit();
+                                                }}
                                                 className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold"
                                             >
                                                 Add Transaction
