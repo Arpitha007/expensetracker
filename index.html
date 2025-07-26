@@ -65,6 +65,63 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
+        // Simple cloud sync simulation using a global object
+        window.CloudSync = window.CloudSync || {
+            data: {},
+            users: {
+                'admin': { password: 'admin123', name: 'Administrator', isAdmin: true },
+                'arpbat': { password: 'arpitha7', name: 'Arpitha Battu' },
+                'sarvesh': { password: 'sarvesh123', name: 'Sarvesh Kommawar' },
+                'vanshika': { password: 'vanshika123', name: 'Vanshika Battu' }
+            },
+            
+            // Save user data to cloud
+            saveUserData: function(username, transactions) {
+                this.data[username] = transactions;
+                // Also save to localStorage as backup
+                localStorage.setItem(`monthlyTracker_${username}`, JSON.stringify(transactions));
+            },
+            
+            // Get user data from cloud
+            getUserData: function(username) {
+                // Try cloud first, then localStorage as fallback
+                if (this.data[username]) {
+                    return this.data[username];
+                }
+                try {
+                    const saved = localStorage.getItem(`monthlyTracker_${username}`);
+                    const data = saved ? JSON.parse(saved) : [];
+                    this.data[username] = data; // Sync to cloud
+                    return data;
+                } catch (error) {
+                    return [];
+                }
+            },
+            
+            // Add new user
+            addUser: function(username, password, name, isAdmin = false) {
+                this.users[username] = { password, name, isAdmin };
+                // Also save users to localStorage
+                localStorage.setItem('userDatabase', JSON.stringify(this.users));
+                return true;
+            },
+            
+            // Load users from localStorage on app start
+            loadUsers: function() {
+                try {
+                    const saved = localStorage.getItem('userDatabase');
+                    if (saved) {
+                        this.users = { ...this.users, ...JSON.parse(saved) };
+                    }
+                } catch (error) {
+                    console.log('Error loading users from localStorage');
+                }
+            }
+        };
+
+        // Initialize cloud sync
+        window.CloudSync.loadUsers();
+        
         // Icon components
         const PlusCircle = () => (
             <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +153,7 @@
 
         const Eye = () => (
             <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <path d="M1 12s4 - 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         );
@@ -132,13 +189,14 @@
             </svg>
         );
 
-        // Updated users database
-        const USERS_DB = {
-            'admin': { password: 'admin123', name: 'Administrator', isAdmin: true },
-            'arpbat': { password: 'arpitha7', name: 'Arpitha Battu' },
-            'sarvesh': { password: 'sarvesh123', name: 'Sarvesh Kommawar' },
-            'vanshika': { password: 'vanshika123', name: 'Vanshika Battu' }
-        };
+        const UserPlus = () => (
+            <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+        );
 
         // Login Component
         const LoginForm = ({ onLogin }) => {
@@ -153,8 +211,8 @@
                     return;
                 }
 
-                if (USERS_DB[username] && USERS_DB[username].password === password) {
-                    onLogin(username, USERS_DB[username].name, USERS_DB[username].isAdmin || false);
+                if (window.CloudSync.users[username] && window.CloudSync.users[username].password === password) {
+                    onLogin(username, window.CloudSync.users[username].name, window.CloudSync.users[username].isAdmin || false);
                     setError('');
                 } else {
                     setError('Invalid username or password');
@@ -219,19 +277,126 @@
             );
         };
 
-        // Main Tracker Component
-        const MonthlyTracker = ({ currentUser, userName, isAdmin, onLogout }) => {
-            // Load user-specific data
-            const getUserData = () => {
-                try {
-                    const saved = localStorage.getItem(`monthlyTracker_${currentUser}`);
-                    return saved ? JSON.parse(saved) : [];
-                } catch (error) {
-                    return [];
+        // Add User Form Component (Admin Only)
+        const AddUserForm = ({ onAddUser, onClose }) => {
+            const [userData, setUserData] = useState({
+                username: '',
+                password: '',
+                name: '',
+                isAdmin: false
+            });
+            const [error, setError] = useState('');
+
+            const handleSubmit = () => {
+                const { username, password, name } = userData;
+                
+                if (!username || !password || !name) {
+                    setError('Please fill all required fields');
+                    return;
                 }
+
+                if (window.CloudSync.users[username]) {
+                    setError('Username already exists');
+                    return;
+                }
+
+                if (username.length < 3) {
+                    setError('Username must be at least 3 characters');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    setError('Password must be at least 6 characters');
+                    return;
+                }
+
+                window.CloudSync.addUser(username, password, name, userData.isAdmin);
+                onAddUser();
+                onClose();
+                setError('');
             };
 
-            const [transactions, setTransactions] = useState(getUserData);
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Add New User</h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                                <input
+                                    type="text"
+                                    value={userData.name}
+                                    onChange={(e) => setUserData({...userData, name: e.target.value})}
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter full name"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                                <input
+                                    type="text"
+                                    value={userData.username}
+                                    onChange={(e) => setUserData({...userData, username: e.target.value.toLowerCase()})}
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter username (min 3 chars)"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                                <input
+                                    type="password"
+                                    value={userData.password}
+                                    onChange={(e) => setUserData({...userData, password: e.target.value})}
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter password (min 6 chars)"
+                                />
+                            </div>
+
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="isAdmin"
+                                    checked={userData.isAdmin}
+                                    onChange={(e) => setUserData({...userData, isAdmin: e.target.checked})}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700">
+                                    Make this user an admin
+                                </label>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleSubmit}
+                                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all duration-200 font-semibold"
+                                >
+                                    Add User
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main Tracker Component
+        const MonthlyTracker = ({ currentUser, userName, isAdmin, onLogout }) => {
+            const [transactions, setTransactions] = useState(() => window.CloudSync.getUserData(currentUser));
             const [showForm, setShowForm] = useState(false);
             const [formData, setFormData] = useState({
                 type: 'expense',
@@ -242,10 +407,12 @@
             });
             const [showBalance, setShowBalance] = useState(true);
             const [showCredentials, setShowCredentials] = useState(false);
+            const [showAddUser, setShowAddUser] = useState(false);
+            const [userRefresh, setUserRefresh] = useState(0);
 
             // Save data whenever transactions change
             useEffect(() => {
-                localStorage.setItem(`monthlyTracker_${currentUser}`, JSON.stringify(transactions));
+                window.CloudSync.saveUserData(currentUser, transactions);
             }, [transactions, currentUser]);
 
             const incomeCategories = [
@@ -319,6 +486,10 @@
                 }).format(amount);
             };
 
+            const handleAddUser = () => {
+                setUserRefresh(prev => prev + 1);
+            };
+
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
                     <div className="max-w-6xl mx-auto">
@@ -331,13 +502,22 @@
                                 </div>
                                 <div className="flex items-center gap-4">
                                     {isAdmin && (
-                                        <button
-                                            onClick={() => setShowCredentials(!showCredentials)}
-                                            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm"
-                                        >
-                                            <Eye />
-                                            <span>{showCredentials ? 'Hide' : 'Show'} User Credentials</span>
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => setShowAddUser(true)}
+                                                className="flex items-center gap-2 text-green-600 hover:text-green-800 transition-colors text-sm"
+                                            >
+                                                <UserPlus />
+                                                <span>Add User</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setShowCredentials(!showCredentials)}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm"
+                                            >
+                                                <Eye />
+                                                <span>{showCredentials ? 'Hide' : 'Show'} Users</span>
+                                            </button>
+                                        </>
                                     )}
                                     <button
                                         onClick={onLogout}
@@ -352,9 +532,9 @@
                             {/* Admin Credentials Panel */}
                             {isAdmin && showCredentials && (
                                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">User Credentials (Admin View)</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">User Management (Admin View)</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        {Object.entries(USERS_DB).map(([username, user]) => (
+                                        {Object.entries(window.CloudSync.users).map(([username, user]) => (
                                             <div key={username} className="bg-gray-50 p-3 rounded-lg">
                                                 <p className="font-medium text-gray-800">{user.name}</p>
                                                 <p className="text-sm text-gray-600">Username: <span className="font-mono">{username}</span></p>
@@ -369,6 +549,14 @@
                             <h1 className="text-4xl font-bold text-gray-800 mb-2">Monthly Tracker</h1>
                             <p className="text-gray-600">Track your income and expenses effortlessly</p>
                         </div>
+
+                        {/* Add User Modal */}
+                        {showAddUser && (
+                            <AddUserForm 
+                                onAddUser={handleAddUser}
+                                onClose={() => setShowAddUser(false)}
+                            />
+                        )}
 
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -438,7 +626,47 @@
                                     {showForm && (
                                         <div className="mt-6 space-y-4">
                                             <div>
-                                                <div className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setFormData({...formData, type: 'income', category: ''})}
+                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                                                            formData.type === 'income'
+                                                                ? 'bg-green-500 text-white'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                    >
+                                                        Income
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setFormData({...formData, type: 'expense', category: ''})}
+                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                                                            formData.type === 'expense'
+                                                                ? 'bg-red-500 text-white'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                    >
+                                                        Expense
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                                <select
+                                                    value={formData.category}
+                                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="">Select category</option>
+                                                    {(formData.type === 'income' ? incomeCategories : expenseCategories).map(cat => (
+                                                        <option key={cat} value={cat}>{categoryIcons[cat]} {cat}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
                                                 <input
                                                     type="number"
                                                     step="0.01"
@@ -450,7 +678,7 @@
                                             </div>
 
                                             <div>
-                                                <div className="block text-sm font-medium text-gray-700 mb-2">Description</div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                                                 <input
                                                     type="text"
                                                     value={formData.description}
@@ -461,7 +689,7 @@
                                             </div>
 
                                             <div>
-                                                <div className="block text-sm font-medium text-gray-700 mb-2">Date</div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                                                 <input
                                                     type="date"
                                                     value={formData.date}
@@ -630,7 +858,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'monthly-tracker-v2';
+                    const CACHE_NAME = 'monthly-tracker-v3';
                     const urlsToCache = ['/'];
                     
                     self.addEventListener('install', event => {
@@ -658,44 +886,4 @@
         }
     </script>
 </body>
-</html> text-gray-700 mb-2">Type</div>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => setFormData({...formData, type: 'income', category: ''})}
-                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                                                            formData.type === 'income'
-                                                                ? 'bg-green-500 text-white'
-                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        }`}
-                                                    >
-                                                        Income
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setFormData({...formData, type: 'expense', category: ''})}
-                                                        className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
-                                                            formData.type === 'expense'
-                                                                ? 'bg-red-500 text-white'
-                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        }`}
-                                                    >
-                                                        Expense
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div className="block text-sm font-medium text-gray-700 mb-2">Category</div>
-                                                <select
-                                                    value={formData.category}
-                                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                >
-                                                    <option value="">Select category</option>
-                                                    {(formData.type === 'income' ? incomeCategories : expenseCategories).map(cat => (
-                                                        <option key={cat} value={cat}>{categoryIcons[cat]} {cat}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <div className="block text-sm font-medium
+</html>
