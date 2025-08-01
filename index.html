@@ -940,7 +940,16 @@
             // Helper function to get the default date for selected month/year
             const getDefaultDateForMonth = (year, month) => {
                 const monthIndex = monthNames.indexOf(month);
-                const date = new Date(year, monthIndex, 1);
+                let date;
+                
+                // If it's the current month and year, use today's date
+                if (year === currentDate.getFullYear() && monthIndex === currentDate.getMonth()) {
+                    date = currentDate;
+                } else {
+                    // Otherwise, use the first day of the selected month
+                    date = new Date(year, monthIndex, 1);
+                }
+                
                 return date.toISOString().split('T')[0];
             };
 
@@ -948,13 +957,17 @@
             useEffect(() => {
                 const monthTransactions = window.CloudSync.getUserData(currentUser, selectedYear, selectedMonth);
                 setTransactions(monthTransactions);
-                
-                // Update the form date to match the selected month/year
-                setFormData(prev => ({
-                    ...prev,
-                    date: getDefaultDateForMonth(selectedYear, selectedMonth)
-                }));
             }, [currentUser, selectedYear, selectedMonth]);
+
+            // Update form date when month/year changes
+            useEffect(() => {
+                if (!isEditMode) {
+                    setFormData(prev => ({
+                        ...prev,
+                        date: getDefaultDateForMonth(selectedYear, selectedMonth)
+                    }));
+                }
+            }, [selectedYear, selectedMonth, isEditMode]);
 
             // Save data whenever transactions change
             useEffect(() => {
@@ -989,6 +1002,15 @@
 
             const handleSubmit = () => {
                 if (!formData.category || !formData.amount) return;
+
+                // Validate date is within the selected month/year
+                const selectedDate = new Date(formData.date);
+                const selectedMonthIndex = monthNames.indexOf(selectedMonth);
+                
+                if (selectedDate.getFullYear() !== selectedYear || selectedDate.getMonth() !== selectedMonthIndex) {
+                    alert(`Please select a date within ${selectedMonth} ${selectedYear}`);
+                    return;
+                }
 
                 if (isEditMode && editingTransaction) {
                     // Update existing transaction
@@ -1121,6 +1143,17 @@
                 const income = monthData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
                 const expenses = monthData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
                 return { income, expenses, balance: income - expenses, transactions: monthData.length };
+            };
+
+            const getDateConstraints = () => {
+                const monthIndex = monthNames.indexOf(selectedMonth);
+                const firstDay = new Date(selectedYear, monthIndex, 1);
+                const lastDay = new Date(selectedYear, monthIndex + 1, 0);
+                
+                return {
+                    min: firstDay.toISOString().split('T')[0],
+                    max: lastDay.toISOString().split('T')[0]
+                };
             };
 
             return (
@@ -1577,13 +1610,20 @@
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Date (within {selectedMonth} {selectedYear})
+                                </label>
                                 <input
                                     type="date"
                                     value={formData.date}
                                     onChange={(e) => setFormData({...formData, date: e.target.value})}
                                     className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    min={getDateConstraints().min}
+                                    max={getDateConstraints().max}
                                 />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Select a date between {getDateConstraints().min} and {getDateConstraints().max}
+                                </p>
                             </div>
 
                             <div className="flex gap-3">
