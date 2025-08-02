@@ -219,6 +219,41 @@
         .opening-balance-card .text-green-600 {
             color: white !important;
         }
+
+        /* Balance breakdown styling */
+        .balance-breakdown {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #0284c7;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .balance-component {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+
+        .balance-component.opening {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .balance-component.current {
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .balance-component.total {
+            border-top: 1px solid #0284c7;
+            padding-top: 8px;
+            margin-top: 4px;
+            font-weight: 700;
+            color: #0c4a6e;
+        }
     </style>
 </head>
 <body>
@@ -1192,6 +1227,16 @@
                 setShowMobileForm(false);
             };
 
+            // Calculate totals excluding opening balance for Income/Expense display
+            const currentMonthIncome = transactions
+                .filter(t => t.type === 'income' && !t.isOpeningBalance)
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const currentMonthExpenses = transactions
+                .filter(t => t.type === 'expense' && !t.isOpeningBalance)
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            // Calculate total balance including opening balance
             const totalIncome = transactions
                 .filter(t => t.type === 'income')
                 .reduce((sum, t) => sum + t.amount, 0);
@@ -1207,19 +1252,15 @@
             const openingBalance = openingBalanceTransaction ? 
                 (openingBalanceTransaction.type === 'income' ? openingBalanceTransaction.amount : -openingBalanceTransaction.amount) : 0;
 
-            // Calculate current month's income/expenses (excluding opening balance)
-            const currentMonthIncome = transactions
-                .filter(t => t.type === 'income' && !t.isOpeningBalance)
-                .reduce((sum, t) => sum + t.amount, 0);
-
-            const currentMonthExpenses = transactions
-                .filter(t => t.type === 'expense' && !t.isOpeningBalance)
-                .reduce((sum, t) => sum + t.amount, 0);
-
             const getCategoryTotals = (type) => {
                 const categories = type === 'income' ? incomeCategories : expenseCategories;
                 return categories.map(category => {
-                    const categoryTransactions = transactions.filter(t => t.type === type && t.category === category);
+                    // Exclude opening balance from charts
+                    const categoryTransactions = transactions.filter(t => 
+                        t.type === type && 
+                        t.category === category && 
+                        !t.isOpeningBalance
+                    );
                     const total = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
                     return { category, total, count: categoryTransactions.length };
                 }).filter(c => c.total > 0);
@@ -1457,13 +1498,11 @@
                                     <div>
                                         <p className="text-xs text-gray-600 mb-1">Income</p>
                                         <p className="text-lg font-bold text-green-600">
-                                            {totalIncome > 99999 ? `₹${(totalIncome/1000).toFixed(0)}K` : formatCurrency(totalIncome)}
+                                            {currentMonthIncome > 99999 ? `₹${(currentMonthIncome/1000).toFixed(0)}K` : formatCurrency(currentMonthIncome)}
                                         </p>
-                                        {openingBalance > 0 && (
-                                            <p className="text-xs text-gray-500">
-                                                Month: {currentMonthIncome > 99999 ? `₹${(currentMonthIncome/1000).toFixed(0)}K` : `₹${currentMonthIncome.toLocaleString('en-IN')}`}
-                                            </p>
-                                        )}
+                                        <p className="text-xs text-gray-500">
+                                            This month only
+                                        </p>
                                     </div>
                                     <div className="text-green-500">
                                         <TrendingUp />
@@ -1476,13 +1515,11 @@
                                     <div>
                                         <p className="text-xs text-gray-600 mb-1">Expenses</p>
                                         <p className="text-lg font-bold text-red-600">
-                                            {totalExpenses > 99999 ? `₹${(totalExpenses/1000).toFixed(0)}K` : formatCurrency(totalExpenses)}
+                                            {currentMonthExpenses > 99999 ? `₹${(currentMonthExpenses/1000).toFixed(0)}K` : formatCurrency(currentMonthExpenses)}
                                         </p>
-                                        {Math.abs(openingBalance) > 0 && openingBalance < 0 && (
-                                            <p className="text-xs text-gray-500">
-                                                Month: {currentMonthExpenses > 99999 ? `₹${(currentMonthExpenses/1000).toFixed(0)}K` : `₹${currentMonthExpenses.toLocaleString('en-IN')}`}
-                                            </p>
-                                        )}
+                                        <p className="text-xs text-gray-500">
+                                            This month only
+                                        </p>
                                     </div>
                                     <div className="text-red-500">
                                         <TrendingDown />
@@ -1508,10 +1545,22 @@
                                                 {showBalance ? <EyeOff /> : <Eye />}
                                             </button>
                                         </div>
-                                        {openingBalance !== 0 && (
-                                            <p className="text-xs text-gray-500">
-                                                Month: {(currentMonthIncome - currentMonthExpenses) >= 0 ? '+' : ''}₹{(currentMonthIncome - currentMonthExpenses).toLocaleString('en-IN')}
-                                            </p>
+                                        {/* Balance breakdown */}
+                                        {openingBalance !== 0 && showBalance && (
+                                            <div className="balance-breakdown">
+                                                <div className="balance-component opening">
+                                                    <span>Opening:</span>
+                                                    <span>{openingBalance >= 0 ? '+' : ''}₹{openingBalance.toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div className="balance-component current">
+                                                    <span>This month:</span>
+                                                    <span>{(currentMonthIncome - currentMonthExpenses) >= 0 ? '+' : ''}₹{(currentMonthIncome - currentMonthExpenses).toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div className="balance-component total">
+                                                    <span>Total:</span>
+                                                    <span>{balance >= 0 ? '+' : ''}₹{balance.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                     <div className="text-blue-500">
