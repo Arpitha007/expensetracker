@@ -469,7 +469,7 @@
             },
 
             // Get previous month balance
-              // Get previous month balance (includes credit card expenses)
+            // Get previous month balance (includes credit card expenses)
             getPreviousMonthBalance: function(username, year, month) {
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                                  'July', 'August', 'September', 'October', 'November', 'December'];
@@ -490,7 +490,7 @@
                 const prevTransactions = this.getUserData(username, prevYear, prevMonth);
                 const prevCreditCards = this.getCreditCards(username, prevYear, prevMonth);
                 
-                // Calculate cash flow (income - expenses)
+                // Calculate cash flow (income - expenses) - ALL transactions including opening balance
                 const income = prevTransactions
                     .filter(t => t.type === 'income')
                     .reduce((sum, t) => sum + t.amount, 0);
@@ -503,11 +503,12 @@
                     sum + card.expenses.reduce((cardSum, expense) => cardSum + expense.amount, 0), 0
                 );
                 
-                // Net balance = cash flow - credit expenses
-                const netBalance = (income - expenses) - creditExpenses;
+                // Net balance = total cash flow - credit expenses
+                const cashBalance = income - expenses;
+                const netBalance = cashBalance - creditExpenses;
                 
                 console.log(`Previous month balance for ${prevMonth} ${prevYear}:`, {
-                    income, expenses, creditExpenses, netBalance
+                    income, expenses, creditExpenses, cashBalance, netBalance
                 });
                 
                 return netBalance;
